@@ -1,0 +1,13 @@
+// protoc --go_out=. internal/onto/ontology.proto
+syntax = "proto3";
+
+package onto;
+
+option go_package = "/internal/onto";
+
+message DeviceEvent {
+  uint32 EType = 1;
+  uint32 Code = 2;
+  int32 Value = 3;
+  int64 Timestamp = 4;
+}

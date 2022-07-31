@@ -4,7 +4,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"go-kvm/internal/onto"
 	"io/ioutil"
+
+	evdev "github.com/gvalkov/golang-evdev"
+
+	"google.golang.org/protobuf/proto"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -60,12 +65,38 @@ func (c *Client) Connect() {
 
 clientLoop:
 	for {
+
 		b := make([]byte, 64)
 		n, err := conn.Read(b)
 		if err != nil {
 			log.Errorf("failed to read conn %v", err)
 			break clientLoop
 		}
-		log.Printf("%d %s", n, b)
+
+		event := &onto.DeviceEvent{}
+		err = proto.Unmarshal(b[:n], event)
+		if err != nil {
+			log.Errorf("failed to unmarshal device event: %v", err)
+			break clientLoop
+		}
+
+		c.doInput(event)
+	}
+}
+
+func (c *Client) doInput(event *onto.DeviceEvent) {
+	eStr := evdev.EV[int(event.EType)]
+
+	switch eStr {
+	case "EV_SYN":
+		log.Printf("Syncronization Event: Code: %s, Value: %d", evdev.SYN[int(event.Code)], event.Value)
+	case "EV_KEY":
+		log.Printf("Key Event: Code: %s, Value: %d", evdev.KEY[int(event.Code)], event.Value)
+	case "EV_MSC":
+		log.Printf("Misc Event: Code %s, Value: %d", evdev.MSC[int(event.Code)], event.Value)
+	case "EV_REL":
+		log.Printf("Relative Event: Code: %s, Value: %d", evdev.REL[int(event.Code)], event.Value)
+	default:
+		log.Warnf("unhandled event type: %s", eStr)
 	}
 }

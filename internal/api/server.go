@@ -5,9 +5,12 @@ import (
 	"crypto/x509"
 	"fmt"
 	"go-kvm/internal/domain"
+	"go-kvm/internal/onto"
 	"io/ioutil"
 	"net"
 	"sync"
+
+	"google.golang.org/protobuf/proto"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -57,8 +60,20 @@ clientLoop:
 		select {
 		case inputEvents := <-s.InputChan:
 			for _, e := range inputEvents {
-				ev := fmt.Sprintf("%d %d %d %d", e.Type, e.Code, e.Value, e.Time.Nano())
-				n, err := conn.Write([]byte(ev))
+				pb := &onto.DeviceEvent{
+					EType:     uint32(e.Type),
+					Code:      uint32(e.Code),
+					Value:     e.Value,
+					Timestamp: e.Time.Nano(),
+				}
+
+				out, err := proto.Marshal(pb)
+				if err != nil {
+					log.Errorf("failed to marshal event to bytes: %v", err)
+					break clientLoop
+				}
+
+				n, err := conn.Write(out)
 				if err != nil {
 					log.Errorf("server write to client failed: %v", err)
 					break clientLoop
