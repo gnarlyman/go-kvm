@@ -7,6 +7,7 @@ import (
 	"go-kvm/internal/onto"
 	"io/ioutil"
 
+	"github.com/go-vgo/robotgo"
 	evdev "github.com/gvalkov/golang-evdev"
 
 	"google.golang.org/protobuf/proto"
@@ -91,7 +92,19 @@ func (c *Client) doInput(event *onto.DeviceEvent) {
 	case "EV_SYN":
 		log.Printf("Syncronization Event: Code: %s, Value: %d", evdev.SYN[int(event.Code)], event.Value)
 	case "EV_KEY":
-		log.Printf("Key Event: Code: %s, Value: %d", evdev.KEY[int(event.Code)], event.Value)
+		key := evdev.KEY[int(event.Code)]
+		log.Printf("Key Event: Code: %s, Value: %d", key, event.Value)
+		switch key {
+		case "KEY_A":
+			switch event.Value {
+			case 1:
+				log.Printf("a down")
+				robotgo.KeyDown("a")
+			case 0:
+				log.Printf("a up")
+				robotgo.KeyUp("a")
+			}
+		}
 	case "EV_MSC":
 		log.Printf("Misc Event: Code %s, Value: %d", evdev.MSC[int(event.Code)], event.Value)
 	case "EV_REL":

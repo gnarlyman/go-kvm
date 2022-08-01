@@ -7,15 +7,22 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  - env:
-      - CGO_ENABLED=0
+  - id: darwin-amd64
     goos:
-      - linux
-      - windows
       - darwin
     goarch:
       - amd64
-      - arm64
+    env:
+      - CGO_ENABLED=1
+
+  - id: linux-amd64
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=1
+
 archives:
   - replacements:
       darwin: Darwin
